@@ -1,0 +1,18 @@
+{
+  "name": "pcos_woman_matters",
+  "version": "1.0.0",
+  "description": "AI-powered PCOS and Endometriosis early detection platform",
+  "main": "index.js",
+  "scripts": {
+    "install-all": "npm install && npm install --prefix backend && npm install --prefix frontend",
+    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "backend": "npm run dev --prefix backend",
+    "frontend": "npm run dev --prefix frontend"
+  },
+  "keywords": ["PCOS", "Endometriosis", "Healthcare", "AI"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
