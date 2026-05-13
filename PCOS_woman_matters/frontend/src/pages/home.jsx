@@ -13,7 +13,7 @@ export default function Home() {
 
         <div className="home-description">
           <p>
-            Welcome to an AI-powered healthcare platform designed to help with early detection of
+            Welcome to a predictive healthcare platform designed to help with early detection of
             Polycystic Ovary Syndrome (PCOS) and reduce the risk of misdiagnosis with Endometriosis.
           </p>
         </div>
@@ -22,18 +22,18 @@ export default function Home() {
           <div className="role-card patient-card">
             <div className="role-icon">Patient</div>
             <h2>Patient Portal</h2>
-            <p>Complete a health screening to assess your risk of PCOS or Endometriosis</p>
+            <p>Complete a quick health screening to assess your risk of PCOS or Endometriosis</p>
             <ul className="feature-list">
-              <li>Symptom-based assessment</li>
-              <li>Personalized risk score</li>
+              <li>Quick symptom-based assessment</li>
+              <li>Instant personalized risk score</li>
               <li>Health information</li>
               <li>Medical recommendations</li>
             </ul>
             <button
-              onClick={() => navigate("/login?role=patient")}
+              onClick={() => navigate("/patient")}
               className="btn btn-primary btn-large"
             >
-              Patient Login
+              Take Screening Now
             </button>
           </div>
 

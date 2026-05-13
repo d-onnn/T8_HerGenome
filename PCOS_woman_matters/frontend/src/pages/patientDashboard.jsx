@@ -5,7 +5,7 @@ import { assessmentAPI } from '../services/api';
 export default function PatientDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('screening');
-  const [showScreening, setShowScreening] = useState(false);
+  const [showScreening, setShowScreening] = useState(true);
   const [formData, setFormData] = useState({
     patientName: '',
     patientAge: '',
@@ -24,9 +24,7 @@ export default function PatientDashboard() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  const handleBackHome = () => {
     navigate('/');
   };
 
@@ -64,17 +62,36 @@ export default function PatientDashboard() {
     }
   };
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const handleNewScreening = () => {
+    setFormData({
+      patientName: '',
+      patientAge: '',
+      symptoms: {
+        irregular_periods: false,
+        excessive_hair_growth: false,
+        acne: false,
+        weight_gain: false,
+        infertility: false,
+        pelvic_pain: false,
+        fatigue: false,
+        mood_changes: false
+      },
+      medicalHistory: ''
+    });
+    setResult(null);
+    setShowScreening(true);
+    setActiveTab('screening');
+  };
 
   return (
     <div className="dashboard">
       <header className="dashboard-header">
         <div className="header-left">
-          <h1>Patient Dashboard</h1>
-          <p>Welcome, {user.name || 'Patient'}</p>
+          <h1>PCOS Health Screening</h1>
+          <p>Quick assessment tool for early detection</p>
         </div>
-        <button onClick={handleLogout} className="btn btn-logout">
-          Logout
+        <button onClick={handleBackHome} className="btn btn-logout">
+          Back to Home
         </button>
       </header>
 
@@ -92,6 +109,7 @@ export default function PatientDashboard() {
           <button
             className={`nav-btn ${activeTab === 'results' ? 'active' : ''}`}
             onClick={() => setActiveTab('results')}
+            disabled={!result}
           >
             My Results
           </button>
@@ -187,9 +205,9 @@ export default function PatientDashboard() {
                     <button
                       type="button"
                       className="btn btn-secondary"
-                      onClick={() => setShowScreening(false)}
+                      onClick={handleBackHome}
                     >
-                      Cancel
+                      Back to Home
                     </button>
                   </div>
                 </form>
@@ -220,6 +238,13 @@ export default function PatientDashboard() {
                       </p>
                     </div>
                     <p className="timestamp">Assessment Date: {new Date(result.timestamp).toLocaleDateString()}</p>
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleNewScreening}
+                      style={{ marginTop: '20px' }}
+                    >
+                      Take Another Assessment
+                    </button>
                   </div>
                 </div>
               ) : (
