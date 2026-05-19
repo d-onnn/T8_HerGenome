@@ -34,8 +34,12 @@ export const assessmentAPI = {
   
   updateAssessment: (id, data) => api.put(`/assessments/${id}`, data),
   
-  compareDiagnosis: (symptoms, medicalHistory) =>
-    api.post('/diagnosis/compare', { symptoms, medicalHistory })
+  compareDiagnosis: (symptomsOrPayload, medicalHistory) => {
+    if (typeof symptomsOrPayload === 'object' && medicalHistory === undefined) {
+      return api.post('/diagnosis/compare', symptomsOrPayload);
+    }
+    return api.post('/diagnosis/compare', { symptoms: symptomsOrPayload, medicalHistory });
+  }
 };
 
 export default api;

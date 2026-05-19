@@ -112,7 +112,29 @@ function buildPatientDataForModel(formData) {
     pregnant_y_n: 'pregnant_y_n',
     no_of_abortions: 'no_of_abortions',
     fast_food_y_n: 'fast_food_y_n',
-    reg_exercise_y_n: 'reg_exercise_y_n'
+    reg_exercise_y_n: 'reg_exercise_y_n',
+    chronic_pain_level: 'chronic_pain_level',
+    i_beta_hcg_miu_ml: 'i_beta_hcg_miu_ml',
+    ii_beta_hcg_miu_ml: 'ii_beta_hcg_miu_ml',
+    fsh_miu_ml: 'fsh_miu_ml',
+    lh_miu_ml: 'lh_miu_ml',
+    fsh_lh: 'fsh_lh',
+    tsh_miu_l: 'tsh_miu_l',
+    amh_ng_ml: 'amh_ng_ml',
+    prl_ng_ml: 'prl_ng_ml',
+    vit_d3_ng_ml: 'vit_d3_ng_ml',
+    prg_ng_ml: 'prg_ng_ml',
+    rbs_mg_dl: 'rbs_mg_dl',
+    hb_g_dl: 'hb_g_dl',
+    pulse_rate_bpm: 'pulse_rate_bpm',
+    rr_breaths_min: 'rr_breaths_min',
+    bp_systolic_mmhg: 'bp_systolic_mmhg',
+    bp_diastolic_mmhg: 'bp_diastolic_mmhg',
+    follicle_no_l: 'follicle_no_l',
+    follicle_no_r: 'follicle_no_r',
+    avg_f_size_l_mm: 'avg_f_size_l_mm',
+    avg_f_size_r_mm: 'avg_f_size_r_mm',
+    endometrium_mm: 'endometrium_mm'
   };
 
   Object.entries(mappings).forEach(([formKey, modelKey]) => {
@@ -345,7 +367,47 @@ function calculateRiskScore(symptoms) {
 
 // ===== DIAGNOSIS COMPARISON =====
 app.post('/api/diagnosis/compare', async (req, res) => {
-  const { symptoms, medicalHistory, patientAge, weight_kg, height_cm, bmi, blood_group, cycle_r_i, cycle_length_days, marraige_status_yrs, hip_inch, waist_inch, pregnant_y_n, no_of_abortions, fast_food_y_n, reg_exercise_y_n } = req.body;
+  const {
+    symptoms,
+    medicalHistory,
+    patientAge,
+    weight_kg,
+    height_cm,
+    bmi,
+    blood_group,
+    cycle_r_i,
+    cycle_length_days,
+    marraige_status_yrs,
+    hip_inch,
+    waist_inch,
+    pregnant_y_n,
+    no_of_abortions,
+    fast_food_y_n,
+    reg_exercise_y_n,
+    chronic_pain_level,
+    model_type,
+    i_beta_hcg_miu_ml,
+    ii_beta_hcg_miu_ml,
+    fsh_miu_ml,
+    lh_miu_ml,
+    fsh_lh,
+    tsh_miu_l,
+    amh_ng_ml,
+    prl_ng_ml,
+    vit_d3_ng_ml,
+    prg_ng_ml,
+    rbs_mg_dl,
+    hb_g_dl,
+    pulse_rate_bpm,
+    rr_breaths_min,
+    bp_systolic_mmhg,
+    bp_diastolic_mmhg,
+    follicle_no_l,
+    follicle_no_r,
+    avg_f_size_l_mm,
+    avg_f_size_r_mm,
+    endometrium_mm
+  } = req.body;
 
   if (!symptoms) {
     return res.status(400).json({ error: 'Symptoms required' });
@@ -368,11 +430,33 @@ app.post('/api/diagnosis/compare', async (req, res) => {
       no_of_abortions,
       fast_food_y_n,
       reg_exercise_y_n,
+      chronic_pain_level,
+      i_beta_hcg_miu_ml,
+      ii_beta_hcg_miu_ml,
+      fsh_miu_ml,
+      lh_miu_ml,
+      fsh_lh,
+      tsh_miu_l,
+      amh_ng_ml,
+      prl_ng_ml,
+      vit_d3_ng_ml,
+      prg_ng_ml,
+      rbs_mg_dl,
+      hb_g_dl,
+      pulse_rate_bpm,
+      rr_breaths_min,
+      bp_systolic_mmhg,
+      bp_diastolic_mmhg,
+      follicle_no_l,
+      follicle_no_r,
+      avg_f_size_l_mm,
+      avg_f_size_r_mm,
+      endometrium_mm,
       symptoms
     });
 
     // Run ML predictions
-    const predictions = await runPredictions(patientData, 'patient');
+    const predictions = await runPredictions(patientData, model_type || 'patient');
 
     if (predictions && predictions.success) {
       const pcosProb = predictions.pcos?.probability || calculatePCOSRisk(symptoms) / 100;

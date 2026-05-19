@@ -30,6 +30,7 @@ export default function PatientDashboard() {
       hair_loss: false,
       skin_darkening: false
     },
+    chronic_pain_level: '',
     pregnant_y_n: false,
     no_of_abortions: '',
     fast_food_y_n: false,
@@ -129,6 +130,7 @@ export default function PatientDashboard() {
         hair_loss: false,
         skin_darkening: false
       },
+      chronic_pain_level: '',
       pregnant_y_n: false,
       no_of_abortions: '',
       fast_food_y_n: false,
@@ -498,21 +500,37 @@ export default function PatientDashboard() {
                       <span>{expandedSections.symptoms ? '▼' : '▶'}</span>
                     </div>
                     {expandedSections.symptoms && (
-                      <div className="symptoms-grid">
-                        {Object.keys(formData.symptoms).map(symptom => (
-                          <div key={symptom} className="checkbox-item">
-                            <input
-                              type="checkbox"
-                              id={symptom}
-                              checked={formData.symptoms[symptom]}
-                              onChange={() => handleSymptomChange(symptom)}
-                            />
-                            <label htmlFor={symptom}>
-                              {symptom.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
+                      <>
+                        <div className="symptoms-grid">
+                          {Object.keys(formData.symptoms).map(symptom => (
+                            <div key={symptom} className="checkbox-item">
+                              <input
+                                type="checkbox"
+                                id={symptom}
+                                checked={formData.symptoms[symptom]}
+                                onChange={() => handleSymptomChange(symptom)}
+                              />
+                              <label htmlFor={symptom}>
+                                {symptom.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="form-group" style={{ marginTop: '16px' }}>
+                          <label htmlFor="chronic_pain_level">Chronic Pelvic Pain Level (0-10)</label>
+                          <input
+                            id="chronic_pain_level"
+                            type="number"
+                            name="chronic_pain_level"
+                            value={formData.chronic_pain_level}
+                            onChange={handleInputChange}
+                            min="0"
+                            max="10"
+                            step="1"
+                            placeholder="Enter 0-10"
+                          />
+                        </div>
+                      </>
                     )}
                   </div>
 

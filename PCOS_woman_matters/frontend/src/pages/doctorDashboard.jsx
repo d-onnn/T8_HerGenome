@@ -70,6 +70,169 @@ export default function DoctorDashboard() {
     }
   };
 
+  const handleInjectFeatures = async () => {
+    if (!selectedAssessment) return;
+
+    const name = (selectedAssessment.patientName || '').trim();
+    let payload = {
+      patientName: selectedAssessment.patientName,
+      patientAge: selectedAssessment.patientAge,
+      symptoms: selectedAssessment.symptoms || {},
+      medicalHistory: selectedAssessment.medicalHistory || '',
+      model_type: 'doctor'
+    };
+
+    if (name === 'Mary Ng') {
+      payload = {
+        ...payload,
+        patientAge: 24,
+        weight_kg: 82,
+        height_cm: 160,
+        bmi: 32.0,
+        blood_group: 1,
+        cycle_r_i: 0,
+        cycle_length_days: 45,
+        marraige_status_yrs: 2,
+        hip_inch: 44,
+        waist_inch: 39,
+        pregnant_y_n: 1,
+        no_of_abortions: 0,
+        fast_food_y_n: 1,
+        reg_exercise_y_n: 0,
+        symptoms: {
+          irregular_periods: true,
+          excessive_hair_growth: true,
+          acne: true,
+          weight_gain: true,
+          infertility: false,
+          pelvic_pain: false,
+          fatigue: false,
+          mood_changes: false,
+          hair_loss: false,
+          skin_darkening: true
+        },
+        chronic_pain_level: 0,
+        fsh_miu_ml: 5.5,
+        lh_miu_ml: 15,
+        amh_ng_ml: 7.5,
+        tsh_miu_l: 3.8,
+        prl_ng_ml: 28,
+        vit_d3_ng_ml: 16,
+        rbs_mg_dl: 140,
+        hb_g_dl: 12.2,
+        bp_systolic_mmhg: 118,
+        bp_diastolic_mmhg: 76,
+        follicle_no_l: 18,
+        follicle_no_r: 20,
+        avg_f_size_l_mm: 5,
+        avg_f_size_r_mm: 6,
+        endometrium_mm: 7
+      };
+    } else if (name === 'Jane Tan') {
+      payload = {
+        ...payload,
+        patientAge: 31,
+        weight_kg: 52,
+        height_cm: 165,
+        bmi: 19.1,
+        blood_group: 2,
+        cycle_r_i: 0,
+        cycle_length_days: 45,
+        marraige_status_yrs: 4,
+        hip_inch: 36,
+        waist_inch: 27,
+        pregnant_y_n: 0,
+        no_of_abortions: 0,
+        fast_food_y_n: 0,
+        reg_exercise_y_n: 1,
+        symptoms: {
+          irregular_periods: true,
+          excessive_hair_growth: false,
+          acne: false,
+          weight_gain: false,
+          infertility: true,
+          pelvic_pain: true,
+          fatigue: true,
+          mood_changes: false,
+          hair_loss: false,
+          skin_darkening: false
+        },
+        chronic_pain_level: 8,
+        fsh_miu_ml: 5.5,
+        lh_miu_ml: 7.2,
+        amh_ng_ml: 3.2,
+        tsh_miu_l: 2.1,
+        prl_ng_ml: 18,
+        vit_d3_ng_ml: 34,
+        rbs_mg_dl: 92,
+        hb_g_dl: 13.1,
+        bp_systolic_mmhg: 112,
+        bp_diastolic_mmhg: 72,
+        follicle_no_l: 4,
+        follicle_no_r: 3,
+        avg_f_size_l_mm: 12,
+        avg_f_size_r_mm: 12,
+        endometrium_mm: 8
+      };
+    } else if (name === 'Hana Wong') {
+      payload = {
+        ...payload,
+        patientAge: 31,
+        weight_kg: 81,
+        height_cm: 168,
+        bmi: 28.7,
+        blood_group: 3,
+        cycle_r_i: 0,
+        cycle_length_days: 42,
+        marraige_status_yrs: 6,
+        hip_inch: 41,
+        waist_inch: 35,
+        pregnant_y_n: 1,
+        no_of_abortions: 1,
+        fast_food_y_n: 1,
+        reg_exercise_y_n: 0,
+        symptoms: {
+          irregular_periods: true,
+          excessive_hair_growth: true,
+          acne: true,
+          weight_gain: true,
+          infertility: true,
+          pelvic_pain: true,
+          fatigue: true,
+          mood_changes: true,
+          hair_loss: false,
+          skin_darkening: true
+        },
+        chronic_pain_level: 5,
+        fsh_miu_ml: 6.2,
+        lh_miu_ml: 15.2,
+        amh_ng_ml: 6.1,
+        tsh_miu_l: 3.2,
+        prl_ng_ml: 24,
+        vit_d3_ng_ml: 22,
+        rbs_mg_dl: 110,
+        hb_g_dl: 11.6,
+        bp_systolic_mmhg: 124,
+        bp_diastolic_mmhg: 82,
+        follicle_no_l: 16,
+        follicle_no_r: 17,
+        avg_f_size_l_mm: 6,
+        avg_f_size_r_mm: 7,
+        endometrium_mm: 9
+      };
+    } else {
+      return;
+    }
+
+    try {
+      const response = await assessmentAPI.compareDiagnosis(payload);
+      setDiagnosisComparison(response.data);
+    } catch (error) {
+      console.error('Error injecting doctor features:', error);
+      alert('Unable to inject doctor features for comparison.');
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -190,7 +353,16 @@ export default function DoctorDashboard() {
 
                 {diagnosisComparison && (
                   <div className="diagnosis-comparison">
-                    <h3>Diagnosis Probability Comparison</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <h3>Diagnosis Probability Comparison</h3>
+                      <button
+                        className="btn btn-outline"
+                        onClick={handleInjectFeatures}
+                        style={{ marginLeft: '16px' }}
+                      >
+                        Inject Doctor Features
+                      </button>
+                    </div>
                     <div className="comparison-grid">
                       <div className="condition-card pcos">
                         <h4>PCOS Probability</h4>
