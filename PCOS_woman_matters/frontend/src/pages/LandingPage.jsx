@@ -76,7 +76,7 @@ export default function LandingPage() {
           <nav style={styles.nav}>
             <div style={styles.logo}>
               <span style={styles.logoMark}>♀</span>
-              <span style={styles.logoText}>HerHealth AI</span>
+              <span style={styles.logoText}>HerHealth</span>
             </div>
             <a href="/home" style={styles.loginBtn}
               onMouseEnter={e => {
@@ -94,7 +94,7 @@ export default function LandingPage() {
 
           {/* HERO */}
           <section style={styles.hero}>
-            <div style={styles.heroTag}>Women's Health · AI-Assisted Screening</div>
+            <div style={styles.heroTag}>Women's Health · ML-Assisted Screening</div>
             <h1 style={styles.heroTitle}>
               Smarter screening<br />
               <span style={styles.heroAccent}>for every woman.</span>
@@ -153,7 +153,7 @@ export default function LandingPage() {
 
           {/* FOOTER */}
           <footer style={styles.footer}>
-            <span>© 2026 HerHealth AI · Built for women, by researchers.</span>
+            <span>© 2026 HerHealth · Built for women, by researchers.</span>
             <span style={{ opacity: 0.4 }}>·</span>
             <a href="#" style={styles.footerLink}>Privacy</a>
             <span style={{ opacity: 0.4 }}>·</span>

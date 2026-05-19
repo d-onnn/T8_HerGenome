@@ -1,13 +1,13 @@
 ﻿# PCOS Health Portal - Early Detection & Clinical Support
 
-An AI-assisted women’s health platform for early PCOS and endometriosis risk screening, with separate patient and doctor experiences.
+A women’s health platform for early PCOS and endometriosis risk screening, with separate patient and doctor experiences.
 
 ## 🎯 Project Overview
 
 This repository contains a full-stack application with:
 - a Node.js/Express backend that authenticates users, stores assessments in memory, and calls a Python prediction service
 - a React/Vite frontend for patients and doctors
-- machine learning model integration through `backend/models/prediction_service.py`
+- prediction service integration through `backend/models/prediction_service.py`
 
 ## 📁 Project Structure
 
@@ -83,7 +83,7 @@ Open `http://localhost:3000` in your browser.
 - Multi-part screening form
 - Symptom selection and medical history input
 - Automatic BMI calculation
-- AI-backed PCOS and endometriosis risk scores
+- Prediction-based PCOS and endometriosis risk scores
 - Result summary with overlap and recommendation metrics
 
 ### Doctor Experience
