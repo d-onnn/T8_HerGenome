@@ -569,7 +569,7 @@ export default function PatientDashboard() {
                               {(result.pcos_prediction.probability * 100).toFixed(1)}%
                             </span>
                           </div>
-                          <div className={`risk-band band-${result.pcos_prediction.risk_band.toLowerCase()}`}>
+                          <div className={`risk-band band-${result.pcos_prediction.risk_band.toLowerCase().replace(/\s+/g, '')}`}>
                             {result.pcos_prediction.risk_band} Risk
                           </div>
                           <p className="risk-message">{result.pcos_prediction.message}</p>
@@ -603,7 +603,7 @@ export default function PatientDashboard() {
                             {(result.endo_prediction.probability * 100).toFixed(1)}%
                           </span>
                         </div>
-                        <div className={`risk-band band-${result.endo_prediction.risk_band.toLowerCase()}`}>
+                        <div className={`risk-band band-${result.endo_prediction.risk_band.toLowerCase().replace(/\s+/g, '')}`}>
                           {result.endo_prediction.risk_band} Risk
                         </div>
                         <p className="risk-message">{result.endo_prediction.message}</p>
