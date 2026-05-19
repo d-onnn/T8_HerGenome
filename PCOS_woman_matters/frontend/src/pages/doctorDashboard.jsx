@@ -7,6 +7,7 @@ export default function DoctorDashboard() {
   const [assessments, setAssessments] = useState([]);
   const [selectedAssessment, setSelectedAssessment] = useState(null);
   const [diagnosisComparison, setDiagnosisComparison] = useState(null);
+  const [recalculatedOverlap, setRecalculatedOverlap] = useState(null);
   const [doctorFeedback, setDoctorFeedback] = useState('Assessment aligns with clinical impression');
   const [doctorNotes, setDoctorNotes] = useState('');
   const [feedbackMessage, setFeedbackMessage] = useState('');
@@ -86,9 +87,9 @@ export default function DoctorDashboard() {
       payload = {
         ...payload,
         patientAge: 24,
-        weight_kg: 82,
+        weight_kg: 70,
         height_cm: 160,
-        bmi: 32.0,
+        bmi: 28.0,
         blood_group: 1,
         cycle_r_i: 0,
         cycle_length_days: 45,
@@ -97,8 +98,8 @@ export default function DoctorDashboard() {
         waist_inch: 39,
         pregnant_y_n: 1,
         no_of_abortions: 0,
-        fast_food_y_n: 1,
-        reg_exercise_y_n: 0,
+        fast_food_y_n: 0,
+        reg_exercise_y_n: 1,
         symptoms: {
           irregular_periods: true,
           excessive_hair_growth: true,
@@ -226,11 +227,21 @@ export default function DoctorDashboard() {
 
     try {
       const response = await assessmentAPI.compareDiagnosis(payload);
-      setDiagnosisComparison(response.data);
+      const overlap = calculateOverlapPercentage(
+        response.data.pcos?.probability,
+        response.data.endometriosis?.probability
+      );
+      setDiagnosisComparison({ ...response.data, overlapPercentage: overlap });
+      setRecalculatedOverlap(overlap);
     } catch (error) {
       console.error('Error injecting doctor features:', error);
       alert('Unable to inject doctor features for comparison.');
     }
+  };
+
+  const calculateOverlapPercentage = (pcosProbability, endometriosisProbability) => {
+    const overlap = ((pcosProbability || 0) + (endometriosisProbability || 0)) / 2;
+    return Math.round(overlap * 1000) / 10;
   };
 
   const handleLogout = () => {
@@ -456,6 +467,22 @@ export default function DoctorDashboard() {
                         )}
                       </div>
                     </div>
+
+                    {recalculatedOverlap != null && (
+                      <div className="overlap-summary-card" style={{ marginTop: '20px', padding: '18px', border: '1px solid #ddd', borderRadius: '10px', background: '#fafafa' }}>
+                        <h4>Recalculated Overlap</h4>
+                        <p style={{ fontSize: '2rem', margin: '8px 0', color: getRiskColor(recalculatedOverlap) }}>
+                          {recalculatedOverlap.toFixed(1)}%
+                        </p>
+                        <p style={{ margin: 0, fontWeight: '600' }}>
+                          {recalculatedOverlap > 60
+                            ? 'High overlap'
+                            : recalculatedOverlap > 40
+                            ? 'Moderate overlap'
+                            : 'Low overlap'}
+                        </p>
+                      </div>
+                    )}
 
                     <div className="doctor-feedback-card">
                       <h4>Doctor Feedback</h4>
