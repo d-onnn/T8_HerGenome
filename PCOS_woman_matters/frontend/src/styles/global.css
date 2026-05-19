@@ -188,6 +188,32 @@ html {
   color: var(--text-dark);
 }
 
+.form-section .form-group:has(input[type="checkbox"]):not(:has(.checkbox-item)) > label {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-direction: row-reverse !important; /* Flips checkbox to right, text to left */
+  width: 100% !important;
+  cursor: pointer;
+}
+
+/* Stop the checkbox from stretching 100% wide */
+.form-section .form-group:has(input[type="checkbox"]):not(:has(.checkbox-item)) input[type="checkbox"] {
+  width: auto !important;
+  margin-left: 15px !important;
+  margin-right: 0 !important;
+}
+
+/* ==========================================================================
+   2-B. TEXT INPUT RESTORATION (Ensures standard labels stay left)
+   ========================================================================== */
+/* Force standard text inputs, selects, and textareas to stay strictly left-aligned */
+.form-section .form-group:not(:has(input[type="checkbox"])) > label {
+  display: block !important;
+  text-align: left !important;
+  width: 100% !important;
+}
+
 .form-group input,
 .form-group textarea,
 .form-group select {
@@ -513,6 +539,16 @@ html {
   border-radius: 8px;
   margin-bottom: 12px;
   overflow: hidden;
+  padding-left: 20px;   
+  padding-right: 20px;  
+  box-sizing: border-box;
+}
+
+/*Add the 20px bottom spacing dynamically ONLY when the section has inner content */
+.form-section:has(.form-group),
+.form-section:has(.symptoms-grid),
+.form-section:has(div[style*="display: grid"]) {
+  padding-bottom: 20px;
 }
 
 .section-header {
@@ -523,6 +559,11 @@ html {
   cursor: pointer;
   background: linear-gradient(90deg, rgba(98,0,234,0.03), rgba(3,218,198,0.01));
   border-bottom: 1px solid var(--border-color);
+  /*ensure header ignore padding to keep it full-blead in the box*/
+  margin-left: -20px;
+  margin-right: -20px;
+  padding-left: 20px;
+  padding-right: 20px;
 }
 
 .section-header h3 {
