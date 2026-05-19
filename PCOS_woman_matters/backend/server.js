@@ -236,6 +236,8 @@ app.post('/api/assessments', async (req, res) => {
       no_of_abortions,
       fast_food_y_n,
       reg_exercise_y_n,
+      doctor_feedback: null,
+      doctor_notes: null,
       // Keep legacy riskScore for backward compatibility
       riskScore: predictions?.pcos?.probability 
         ? Math.round(predictions.pcos.probability * 100) 
@@ -243,6 +245,11 @@ app.post('/api/assessments', async (req, res) => {
       // Add model predictions
       pcos_prediction: predictions?.pcos || null,
       endo_prediction: predictions?.endo || null,
+      overlapScore: computeOverlapScore(
+        predictions?.pcos?.probability ?? null,
+        predictions?.endo?.probability ?? null,
+        symptoms
+      ),
       timestamp: new Date().toISOString()
     };
 
@@ -255,13 +262,26 @@ app.post('/api/assessments', async (req, res) => {
   } catch (error) {
     console.error('Error processing assessment:', error);
     // Fallback to basic scoring if prediction fails
+    const pcosProbability = calculatePCOSRisk(symptoms) / 100;
+    const endometriosisProbability = calculateEndometriosisRisk(symptoms) / 100;
     const assessment = {
       id: assessmentCounter++,
       patientName,
       patientAge,
       symptoms,
       medicalHistory,
+      doctor_feedback: null,
+      doctor_notes: null,
       riskScore: calculateRiskScore(symptoms),
+      pcos_prediction: {
+        probability: pcosProbability,
+        risk_band: 'Unknown'
+      },
+      endo_prediction: {
+        probability: endometriosisProbability,
+        risk_band: 'Unknown'
+      },
+      overlapScore: computeOverlapScore(pcosProbability, endometriosisProbability, symptoms),
       timestamp: new Date().toISOString()
     };
 
@@ -355,25 +375,26 @@ app.post('/api/diagnosis/compare', async (req, res) => {
     const predictions = await runPredictions(patientData, 'patient');
 
     if (predictions && predictions.success) {
+      const pcosProb = predictions.pcos?.probability || calculatePCOSRisk(symptoms) / 100;
+      const endoProb = predictions.endo?.probability || calculateEndometriosisRisk(symptoms) / 100;
+
       res.json({
         pcos: {
-          probability: predictions.pcos?.probability || calculatePCOSRisk(symptoms),
+          probability: pcosProb,
           risk_band: predictions.pcos?.risk_band || 'Unknown',
           message: predictions.pcos?.message || '',
           top_contributors: predictions.pcos?.top_contributors || [],
           characteristics: getPCOSCharacteristics(symptoms)
         },
         endometriosis: {
-          probability: predictions.endo?.probability || calculateEndometriosisRisk(symptoms),
+          probability: endoProb,
           risk_band: predictions.endo?.risk_band || 'Unknown',
           message: predictions.endo?.message || '',
           top_contributors: predictions.endo?.top_contributors || [],
           characteristics: getEndometriosisCharacteristics(symptoms)
         },
-        recommendation: getRecommendation(
-          (predictions.pcos?.probability || 0) * 100,
-          (predictions.endo?.probability || 0) * 100
-        )
+        overlap_score: computeOverlapScore(pcosProb, endoProb, symptoms),
+        recommendation: getRecommendation(pcosProb * 100, endoProb * 100)
       });
     } else {
       // Fallback to legacy calculation
@@ -391,6 +412,7 @@ app.post('/api/diagnosis/compare', async (req, res) => {
           risk_band: 'Unknown',
           characteristics: getEndometriosisCharacteristics(symptoms)
         },
+        overlap_score: computeOverlapScore(pcosProbability / 100, endometriesisProbability / 100, symptoms),
         recommendation: getRecommendation(pcosProbability, endometriesisProbability),
         warning: 'Using fallback scoring - advanced models unavailable'
       });
@@ -412,6 +434,7 @@ app.post('/api/diagnosis/compare', async (req, res) => {
         risk_band: 'Unknown',
         characteristics: getEndometriosisCharacteristics(symptoms)
       },
+      overlap_score: computeOverlapScore(pcosProbability / 100, endometriesisProbability / 100, symptoms),
       recommendation: getRecommendation(pcosProbability, endometriesisProbability),
       error: 'Fallback mode - advanced models unavailable'
     });
@@ -441,6 +464,17 @@ function calculateEndometriosisRisk(symptoms) {
 
   const matchingSymptoms = endoSymptoms.filter(s => symptoms[s]).length;
   return (matchingSymptoms / endoSymptoms.length) * 100;
+}
+
+function computeOverlapScore(pcosProbability, endoProbability, symptoms) {
+  if (pcosProbability == null || endoProbability == null) {
+    if (!symptoms) return null;
+    pcosProbability = calculatePCOSRisk(symptoms) / 100;
+    endoProbability = calculateEndometriosisRisk(symptoms) / 100;
+  }
+
+  const overlap = ((pcosProbability || 0) + (endoProbability || 0)) / 2;
+  return Math.round(Math.min(Math.max(overlap, 0), 1) * 100);
 }
 
 function getPCOSCharacteristics(symptoms) {

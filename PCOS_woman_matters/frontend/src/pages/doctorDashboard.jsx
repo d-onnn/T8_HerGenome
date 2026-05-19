@@ -7,6 +7,10 @@ export default function DoctorDashboard() {
   const [assessments, setAssessments] = useState([]);
   const [selectedAssessment, setSelectedAssessment] = useState(null);
   const [diagnosisComparison, setDiagnosisComparison] = useState(null);
+  const [doctorFeedback, setDoctorFeedback] = useState('Assessment aligns with clinical impression');
+  const [doctorNotes, setDoctorNotes] = useState('');
+  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [savingFeedback, setSavingFeedback] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('patients');
 
@@ -29,6 +33,9 @@ export default function DoctorDashboard() {
 
   const handleSelectAssessment = async (assessment) => {
     setSelectedAssessment(assessment);
+    setDoctorFeedback(assessment.doctor_feedback || 'Assessment aligns with clinical impression');
+    setDoctorNotes(assessment.doctor_notes || '');
+    setFeedbackMessage('');
     setActiveTab('analysis');
 
     try {
@@ -39,6 +46,27 @@ export default function DoctorDashboard() {
       setDiagnosisComparison(response.data);
     } catch (error) {
       console.error('Error getting diagnosis comparison:', error);
+    }
+  };
+
+  const handleSaveDoctorFeedback = async () => {
+    if (!selectedAssessment) return;
+    try {
+      setSavingFeedback(true);
+      const updatedPayload = {
+        doctor_feedback: doctorFeedback,
+        doctor_notes: doctorNotes
+      };
+      const response = await assessmentAPI.updateAssessment(selectedAssessment.id, updatedPayload);
+      const updatedAssessment = response.data.assessment;
+      setSelectedAssessment(updatedAssessment);
+      setAssessments((prev) => prev.map((item) => item.id === updatedAssessment.id ? updatedAssessment : item));
+      setFeedbackMessage('Feedback saved successfully.');
+    } catch (error) {
+      console.error('Error saving doctor feedback:', error);
+      setFeedbackMessage('Unable to save feedback. Please try again.');
+    } finally {
+      setSavingFeedback(false);
     }
   };
 
@@ -111,19 +139,19 @@ export default function DoctorDashboard() {
                       </div>
                       <div className="card-body">
                         <div className="score-display">
-                          <div className="score-circle" style={{ borderColor: getRiskColor(assessment.riskScore) }}>
-                            <span className="score-number" style={{ color: getRiskColor(assessment.riskScore) }}>
-                              {assessment.riskScore}%
+                          <div className="score-circle" style={{ borderColor: getRiskColor(assessment.overlapScore ?? assessment.riskScore) }}>
+                            <span className="score-number" style={{ color: getRiskColor(assessment.overlapScore ?? assessment.riskScore) }}>
+                              {(assessment.overlapScore ?? assessment.riskScore)}%
                             </span>
                           </div>
                           <div className="score-info">
-                            <p className="score-label">Risk Score</p>
+                            <p className="score-label">Overlap Score</p>
                             <p className="score-status">
-                              {assessment.riskScore > 60
-                                ? 'HIGH RISK'
-                                : assessment.riskScore > 40
-                                ? 'MODERATE RISK'
-                                : 'LOW RISK'}
+                              {(assessment.overlapScore ?? assessment.riskScore) > 60
+                                ? 'HIGH OVERLAP'
+                                : (assessment.overlapScore ?? assessment.riskScore) > 40
+                                ? 'MODERATE OVERLAP'
+                                : 'LOW OVERLAP'}
                             </p>
                           </div>
                         </div>
@@ -157,6 +185,12 @@ export default function DoctorDashboard() {
                   <p><strong>Assessment Date:</strong> {new Date(selectedAssessment.timestamp).toLocaleDateString()}</p>
                   {selectedAssessment.medicalHistory && (
                     <p><strong>Medical History:</strong> {selectedAssessment.medicalHistory}</p>
+                  )}
+                  {selectedAssessment.doctor_feedback && (
+                    <p><strong>Doctor Feedback:</strong> {selectedAssessment.doctor_feedback}</p>
+                  )}
+                  {selectedAssessment.doctor_notes && (
+                    <p><strong>Doctor Notes:</strong> {selectedAssessment.doctor_notes}</p>
                   )}
                 </div>
 
@@ -260,6 +294,48 @@ export default function DoctorDashboard() {
                     <div className="recommendation-box">
                       <h4>Clinical Recommendation</h4>
                       <p>{diagnosisComparison.recommendation}</p>
+                    </div>
+
+                    <div className="doctor-feedback-card">
+                      <h4>Doctor Feedback</h4>
+                      <p>If the model output does not match your clinical impression, select the best option and add notes.</p>
+                      <div className="feedback-options">
+                        {[
+                          'Assessment aligns with clinical impression',
+                          'Greater likelihood of PCOS',
+                          'Greater likelihood of Endometriosis',
+                          'Additional evaluation required'
+                        ].map((option) => (
+                          <label key={option} className="feedback-option">
+                            <input
+                              type="radio"
+                              name="doctorFeedback"
+                              value={option}
+                              checked={doctorFeedback === option}
+                              onChange={(e) => setDoctorFeedback(e.target.value)}
+                            />
+                            <span>{option}</span>
+                          </label>
+                        ))}
+                      </div>
+                      <div className="form-group">
+                        <label htmlFor="doctorNotes">Additional notes (optional)</label>
+                        <textarea
+                          id="doctorNotes"
+                          rows="4"
+                          value={doctorNotes}
+                          onChange={(e) => setDoctorNotes(e.target.value)}
+                          placeholder="Add clinical context or refinement notes for future model training"
+                        ></textarea>
+                      </div>
+                      <button
+                        className="btn btn-primary"
+                        onClick={handleSaveDoctorFeedback}
+                        disabled={savingFeedback}
+                      >
+                        {savingFeedback ? 'Saving...' : 'Save Feedback'}
+                      </button>
+                      {feedbackMessage && <p className="feedback-status">{feedbackMessage}</p>}
                     </div>
                   </div>
                 )}
