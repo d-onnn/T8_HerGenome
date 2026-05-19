@@ -169,18 +169,45 @@ export default function DoctorDashboard() {
                         <div className="probability-bar">
                           <div
                             className="probability-fill"
-                            style={{ width: `${diagnosisComparison.pcos.probability}%` }}
+                            style={{ width: `${diagnosisComparison.pcos.probability * 100}%` }}
                           ></div>
                         </div>
                         <span className="probability-value">
-                          {diagnosisComparison.pcos.probability.toFixed(1)}%
+                          {(diagnosisComparison.pcos.probability * 100).toFixed(1)}%
                         </span>
-                        <h5>Key Characteristics:</h5>
-                        <ul>
-                          {diagnosisComparison.pcos.characteristics.map((char, idx) => (
-                            <li key={idx}>{char}</li>
-                          ))}
-                        </ul>
+                        {diagnosisComparison.pcos.risk_band && (
+                          <div className="risk-band-label" style={{ marginTop: '8px', fontWeight: 'bold' }}>
+                            {diagnosisComparison.pcos.risk_band} Risk
+                          </div>
+                        )}
+                        {diagnosisComparison.pcos.message && (
+                          <p className="risk-message" style={{ fontSize: '0.9em', marginTop: '8px', fontStyle: 'italic' }}>
+                            {diagnosisComparison.pcos.message}
+                          </p>
+                        )}
+                        {diagnosisComparison.pcos.top_contributors && diagnosisComparison.pcos.top_contributors.length > 0 ? (
+                          <>
+                            <h5 style={{ marginTop: '12px' }}>Top Contributing Factors:</h5>
+                            <ul>
+                              {diagnosisComparison.pcos.top_contributors.map((factor, idx) => (
+                                <li key={idx}>
+                                  <strong>{factor.feature.replace(/_/g, ' ')}</strong>
+                                  {factor.contribution_pct && ` (+${factor.contribution_pct}%)`}
+                                  {factor.direction && ` — ${factor.direction}`}
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        ) : (
+                          <>
+                            <h5 style={{ marginTop: '12px' }}>Key Characteristics:</h5>
+                            <ul>
+                              {diagnosisComparison.pcos.characteristics.map((char, idx) => (
+                                <li key={idx}>{char}</li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
                       </div>
 
                       <div className="condition-card endometriosis">
@@ -188,18 +215,45 @@ export default function DoctorDashboard() {
                         <div className="probability-bar">
                           <div
                             className="probability-fill"
-                            style={{ width: `${diagnosisComparison.endometriosis.probability}%` }}
+                            style={{ width: `${diagnosisComparison.endometriosis.probability * 100}%` }}
                           ></div>
                         </div>
                         <span className="probability-value">
-                          {diagnosisComparison.endometriosis.probability.toFixed(1)}%
+                          {(diagnosisComparison.endometriosis.probability * 100).toFixed(1)}%
                         </span>
-                        <h5>Key Characteristics:</h5>
-                        <ul>
-                          {diagnosisComparison.endometriosis.characteristics.map((char, idx) => (
-                            <li key={idx}>{char}</li>
-                          ))}
-                        </ul>
+                        {diagnosisComparison.endometriosis.risk_band && (
+                          <div className="risk-band-label" style={{ marginTop: '8px', fontWeight: 'bold' }}>
+                            {diagnosisComparison.endometriosis.risk_band} Risk
+                          </div>
+                        )}
+                        {diagnosisComparison.endometriosis.message && (
+                          <p className="risk-message" style={{ fontSize: '0.9em', marginTop: '8px', fontStyle: 'italic' }}>
+                            {diagnosisComparison.endometriosis.message}
+                          </p>
+                        )}
+                        {diagnosisComparison.endometriosis.top_contributors && diagnosisComparison.endometriosis.top_contributors.length > 0 ? (
+                          <>
+                            <h5 style={{ marginTop: '12px' }}>Top Contributing Factors:</h5>
+                            <ul>
+                              {diagnosisComparison.endometriosis.top_contributors.map((factor, idx) => (
+                                <li key={idx}>
+                                  <strong>{factor.feature.replace(/_/g, ' ')}</strong>
+                                  {factor.contribution_pct && ` (+${factor.contribution_pct}%)`}
+                                  {factor.direction && ` — ${factor.direction}`}
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        ) : (
+                          <>
+                            <h5 style={{ marginTop: '12px' }}>Key Characteristics:</h5>
+                            <ul>
+                              {diagnosisComparison.endometriosis.characteristics.map((char, idx) => (
+                                <li key={idx}>{char}</li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
                       </div>
                     </div>
 

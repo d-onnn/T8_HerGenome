@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const { spawn } = require('child_process');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -10,6 +12,9 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3001;
 
+// Path to Python prediction service
+const PREDICTION_SERVICE_PATH = path.join(__dirname, 'models', 'prediction_service.py');
+
 // Mock database for users
 const users = {
   'doctor1': { id: 1, password: 'password123', role: 'doctor', name: 'Dr. Smith' },
@@ -19,6 +24,122 @@ const users = {
 // Mock patient assessments storage
 const assessments = {};
 let assessmentCounter = 1;
+
+// ===== PYTHON PREDICTION SERVICE =====
+/**
+ * Call Python prediction service via subprocess
+ * @param {Object} patientData - Patient data object with feature values
+ * @param {String} modelType - 'patient' or 'doctor'
+ * @returns {Promise<Object>} - Prediction results or fallback
+ */
+async function runPredictions(patientData, modelType = 'patient') {
+  return new Promise((resolve) => {
+    const requestData = {
+      model: 'both',  // Run both PCOS and endometriosis predictions
+      model_type: modelType,  // 'patient' or 'doctor'
+      data: patientData
+    };
+
+    // Spawn Python process
+    const python = spawn('python', [PREDICTION_SERVICE_PATH], {
+      cwd: path.join(__dirname, 'models'),
+      timeout: 15000  // 15 second timeout
+    });
+
+    let output = '';
+    let errorOutput = '';
+
+    python.stdout.on('data', (data) => {
+      output += data.toString();
+    });
+
+    python.stderr.on('data', (data) => {
+      errorOutput += data.toString();
+    });
+
+    python.on('close', (code) => {
+      try {
+        if (code === 0 && output) {
+          const result = JSON.parse(output);
+          if (result.success) {
+            resolve(result);
+          } else {
+            console.warn('Prediction service error:', result.error);
+            resolve(null);
+          }
+        } else {
+          console.warn('Python process exited with code', code);
+          if (errorOutput) console.warn('Python stderr:', errorOutput);
+          resolve(null);
+        }
+      } catch (err) {
+        console.warn('Failed to parse prediction output:', err.message);
+        resolve(null);
+      }
+    });
+
+    python.on('error', (err) => {
+      console.warn('Failed to start Python process:', err.message);
+      resolve(null);
+    });
+
+    // Send request to Python process
+    python.stdin.write(JSON.stringify(requestData));
+    python.stdin.end();
+  });
+}
+
+// ===== ASSESSMENT CREATION HELPER =====
+/**
+ * Build patient data object for model prediction
+ * Maps form data to model feature names
+ */
+function buildPatientDataForModel(formData) {
+  const patientData = {};
+
+  // Direct mappings
+  const mappings = {
+    patientAge: 'age_yrs',
+    weight_kg: 'weight_kg',
+    height_cm: 'height_cm',
+    bmi: 'bmi',
+    blood_group: 'blood_group',
+    cycle_r_i: 'cycle_r_i',
+    cycle_length_days: 'cycle_length_days',
+    marraige_status_yrs: 'marraige_status_yrs',
+    hip_inch: 'hip_inch',
+    waist_inch: 'waist_inch',
+    pregnant_y_n: 'pregnant_y_n',
+    no_of_abortions: 'no_of_abortions',
+    fast_food_y_n: 'fast_food_y_n',
+    reg_exercise_y_n: 'reg_exercise_y_n'
+  };
+
+  Object.entries(mappings).forEach(([formKey, modelKey]) => {
+    if (formData[formKey] !== undefined && formData[formKey] !== '') {
+      patientData[modelKey] = formData[formKey];
+    }
+  });
+
+  // Handle symptoms - map to binary features
+  if (formData.symptoms) {
+    Object.entries(formData.symptoms).forEach(([symptom, value]) => {
+      if (symptom === 'excessive_hair_growth') {
+        patientData.hair_growth_y_n = value ? 1 : 0;
+      } else if (symptom === 'acne') {
+        patientData.pimples_y_n = value ? 1 : 0;
+      } else if (symptom === 'weight_gain') {
+        patientData.weight_gain_y_n = value ? 1 : 0;
+      } else if (symptom === 'skin_darkening') {
+        patientData.skin_darkening_y_n = value ? 1 : 0;
+      } else if (symptom === 'hair_loss') {
+        patientData.hair_loss_y_n = value ? 1 : 0;
+      }
+    });
+  }
+
+  return patientData;
+}
 
 // ===== AUTHENTICATION ROUTES =====
 app.post('/api/auth/login', (req, res) => {
@@ -65,29 +186,93 @@ app.get('/api/assessments/:id', (req, res) => {
 });
 
 // Create new assessment
-app.post('/api/assessments', (req, res) => {
-  const { patientName, patientAge, symptoms, medicalHistory } = req.body;
+app.post('/api/assessments', async (req, res) => {
+  const { patientName, patientAge, symptoms, medicalHistory, weight_kg, height_cm, bmi, blood_group, cycle_r_i, cycle_length_days, marraige_status_yrs, hip_inch, waist_inch, pregnant_y_n, no_of_abortions, fast_food_y_n, reg_exercise_y_n } = req.body;
 
   if (!patientName || !symptoms) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return res.status(400).json({ error: 'Missing required fields: patientName and symptoms' });
   }
 
-  const assessment = {
-    id: assessmentCounter++,
-    patientName,
-    patientAge,
-    symptoms,
-    medicalHistory,
-    riskScore: calculateRiskScore(symptoms),
-    timestamp: new Date().toISOString()
-  };
+  try {
+    // Build patient data for model prediction
+    const patientData = buildPatientDataForModel({
+      patientAge,
+      weight_kg,
+      height_cm,
+      bmi,
+      blood_group,
+      cycle_r_i,
+      cycle_length_days,
+      marraige_status_yrs,
+      hip_inch,
+      waist_inch,
+      pregnant_y_n,
+      no_of_abortions,
+      fast_food_y_n,
+      reg_exercise_y_n,
+      symptoms
+    });
 
-  assessments[assessment.id] = assessment;
+    // Run ML predictions
+    const predictions = await runPredictions(patientData, 'patient');
 
-  res.json({
-    success: true,
-    assessment
-  });
+    // Create assessment object
+    const assessment = {
+      id: assessmentCounter++,
+      patientName,
+      patientAge,
+      symptoms,
+      medicalHistory,
+      weight_kg,
+      height_cm,
+      bmi,
+      blood_group,
+      cycle_r_i,
+      cycle_length_days,
+      marraige_status_yrs,
+      hip_inch,
+      waist_inch,
+      pregnant_y_n,
+      no_of_abortions,
+      fast_food_y_n,
+      reg_exercise_y_n,
+      // Keep legacy riskScore for backward compatibility
+      riskScore: predictions?.pcos?.probability 
+        ? Math.round(predictions.pcos.probability * 100) 
+        : calculateRiskScore(symptoms),
+      // Add model predictions
+      pcos_prediction: predictions?.pcos || null,
+      endo_prediction: predictions?.endo || null,
+      timestamp: new Date().toISOString()
+    };
+
+    assessments[assessment.id] = assessment;
+
+    res.json({
+      success: true,
+      assessment
+    });
+  } catch (error) {
+    console.error('Error processing assessment:', error);
+    // Fallback to basic scoring if prediction fails
+    const assessment = {
+      id: assessmentCounter++,
+      patientName,
+      patientAge,
+      symptoms,
+      medicalHistory,
+      riskScore: calculateRiskScore(symptoms),
+      timestamp: new Date().toISOString()
+    };
+
+    assessments[assessment.id] = assessment;
+
+    res.json({
+      success: true,
+      assessment,
+      warning: 'Used fallback scoring - advanced models unavailable'
+    });
+  }
 });
 
 // Update assessment
@@ -139,27 +324,98 @@ function calculateRiskScore(symptoms) {
 }
 
 // ===== DIAGNOSIS COMPARISON =====
-app.post('/api/diagnosis/compare', (req, res) => {
-  const { symptoms, medicalHistory } = req.body;
+app.post('/api/diagnosis/compare', async (req, res) => {
+  const { symptoms, medicalHistory, patientAge, weight_kg, height_cm, bmi, blood_group, cycle_r_i, cycle_length_days, marraige_status_yrs, hip_inch, waist_inch, pregnant_y_n, no_of_abortions, fast_food_y_n, reg_exercise_y_n } = req.body;
 
   if (!symptoms) {
     return res.status(400).json({ error: 'Symptoms required' });
   }
 
-  const pcosProbability = calculatePCOSRisk(symptoms);
-  const endometriesisProbability = calculateEndometriosisRisk(symptoms);
+  try {
+    // Build patient data for model prediction
+    const patientData = buildPatientDataForModel({
+      patientAge,
+      weight_kg,
+      height_cm,
+      bmi,
+      blood_group,
+      cycle_r_i,
+      cycle_length_days,
+      marraige_status_yrs,
+      hip_inch,
+      waist_inch,
+      pregnant_y_n,
+      no_of_abortions,
+      fast_food_y_n,
+      reg_exercise_y_n,
+      symptoms
+    });
 
-  res.json({
-    pcos: {
-      probability: pcosProbability,
-      characteristics: getPCOSCharacteristics(symptoms)
-    },
-    endometriosis: {
-      probability: endometriesisProbability,
-      characteristics: getEndometriosisCharacteristics(symptoms)
-    },
-    recommendation: getRecommendation(pcosProbability, endometriesisProbability)
-  });
+    // Run ML predictions
+    const predictions = await runPredictions(patientData, 'patient');
+
+    if (predictions && predictions.success) {
+      res.json({
+        pcos: {
+          probability: predictions.pcos?.probability || calculatePCOSRisk(symptoms),
+          risk_band: predictions.pcos?.risk_band || 'Unknown',
+          message: predictions.pcos?.message || '',
+          top_contributors: predictions.pcos?.top_contributors || [],
+          characteristics: getPCOSCharacteristics(symptoms)
+        },
+        endometriosis: {
+          probability: predictions.endo?.probability || calculateEndometriosisRisk(symptoms),
+          risk_band: predictions.endo?.risk_band || 'Unknown',
+          message: predictions.endo?.message || '',
+          top_contributors: predictions.endo?.top_contributors || [],
+          characteristics: getEndometriosisCharacteristics(symptoms)
+        },
+        recommendation: getRecommendation(
+          (predictions.pcos?.probability || 0) * 100,
+          (predictions.endo?.probability || 0) * 100
+        )
+      });
+    } else {
+      // Fallback to legacy calculation
+      const pcosProbability = calculatePCOSRisk(symptoms);
+      const endometriesisProbability = calculateEndometriosisRisk(symptoms);
+
+      res.json({
+        pcos: {
+          probability: pcosProbability / 100,
+          risk_band: 'Unknown',
+          characteristics: getPCOSCharacteristics(symptoms)
+        },
+        endometriosis: {
+          probability: endometriesisProbability / 100,
+          risk_band: 'Unknown',
+          characteristics: getEndometriosisCharacteristics(symptoms)
+        },
+        recommendation: getRecommendation(pcosProbability, endometriesisProbability),
+        warning: 'Using fallback scoring - advanced models unavailable'
+      });
+    }
+  } catch (error) {
+    console.error('Error in diagnosis comparison:', error);
+    // Fallback to legacy calculation
+    const pcosProbability = calculatePCOSRisk(symptoms);
+    const endometriesisProbability = calculateEndometriosisRisk(symptoms);
+
+    res.json({
+      pcos: {
+        probability: pcosProbability / 100,
+        risk_band: 'Unknown',
+        characteristics: getPCOSCharacteristics(symptoms)
+      },
+      endometriosis: {
+        probability: endometriesisProbability / 100,
+        risk_band: 'Unknown',
+        characteristics: getEndometriosisCharacteristics(symptoms)
+      },
+      recommendation: getRecommendation(pcosProbability, endometriesisProbability),
+      error: 'Fallback mode - advanced models unavailable'
+    });
+  }
 });
 
 function calculatePCOSRisk(symptoms) {
