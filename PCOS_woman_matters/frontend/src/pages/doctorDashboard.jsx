@@ -186,12 +186,6 @@ export default function DoctorDashboard() {
                   {selectedAssessment.medicalHistory && (
                     <p><strong>Medical History:</strong> {selectedAssessment.medicalHistory}</p>
                   )}
-                  {selectedAssessment.doctor_feedback && (
-                    <p><strong>Doctor Feedback:</strong> {selectedAssessment.doctor_feedback}</p>
-                  )}
-                  {selectedAssessment.doctor_notes && (
-                    <p><strong>Doctor Notes:</strong> {selectedAssessment.doctor_notes}</p>
-                  )}
                 </div>
 
                 {diagnosisComparison && (
@@ -289,11 +283,6 @@ export default function DoctorDashboard() {
                           </>
                         )}
                       </div>
-                    </div>
-
-                    <div className="recommendation-box">
-                      <h4>Clinical Recommendation</h4>
-                      <p>{diagnosisComparison.recommendation}</p>
                     </div>
 
                     <div className="doctor-feedback-card">
